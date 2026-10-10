@@ -14,7 +14,7 @@ from review.services.review_runner import _create_locked_review_job, _default_pa
 def enqueue_automatic_review(project, repository_path, mr, source, payload=None):
     iid = mr.get('iid')
     refs = mr.get('diff_refs') or {}
-    sha = refs.get('head_sha') or mr.get('sha')
+    sha = mr.get('sha') or refs.get('head_sha')
     if isinstance(iid, bool) or not isinstance(iid, int) or iid <= 0:
         raise ValueError('GitLab MR IID 无效')
     if not isinstance(sha, str) or not re.fullmatch(r'[0-9a-fA-F]{40,64}', sha):

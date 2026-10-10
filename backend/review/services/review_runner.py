@@ -218,8 +218,10 @@ def _run_review_job(job_id) -> Review | None:
         expected_sha = payload.get('automatic_head_sha')
         if expected_sha and (mr.get('state') != 'opened' or mr.get('draft', mr.get('work_in_progress', False)) is True):
             raise StaleReviewError('MR 已结束或转为草稿，自动任务已停止')
-        if expected_sha and expected_sha != ((mr.get('diff_refs') or {}).get('head_sha') or mr.get('sha')):
+        if expected_sha and expected_sha != (mr.get('sha') or (mr.get('diff_refs') or {}).get('head_sha')):
             raise StaleReviewError('自动任务的提交已变化，等待最新提交重新入队')
+        if expected_sha and job.analysis_result is None and (mr.get('diff_refs') or {}).get('head_sha') != expected_sha:
+            raise RuntimeError('GitLab 差异尚未准备完成，稍后重试当前提交')
         if review is None:
             diff_refs = mr.get('diff_refs') or {}
             review = Review.objects.create(

@@ -69,6 +69,19 @@ class AutomaticWebhookTests(TestCase):
         self.assertEqual(job.status, ReviewJob.Status.FAILED)
         analyze.assert_not_called()
 
+    def test_lagging_diff_refs_wait_for_current_sha_before_ai(self):
+        preparing = {**mr(2), 'diff_refs': {'head_sha': 'b' * 40, 'base_sha': 'c' * 40, 'start_sha': 'c' * 40}}
+        self.hook('preparing-head', preparing)
+        job = ReviewJob.objects.get()
+        self.assertEqual(job.payload['automatic_head_sha'], 'a' * 40)
+        with patch('review.integrations.gitlab.GitLabClient.fetch_merge_request', return_value=preparing), \
+             patch('review.integrations.llm.LLMClient.analyze') as analyze:
+            run_review_job(job.pk)
+        job.refresh_from_db()
+        self.assertEqual(job.status, ReviewJob.Status.QUEUED)
+        self.assertIsNotNone(job.next_attempt_at)
+        analyze.assert_not_called()
+
 
 @override_settings(REVIEW_EXECUTE_INLINE=False, REVIEW_ALLOW_TEST_FALLBACK=False)
 class DualTriggerTests(TestCase):

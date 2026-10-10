@@ -16,6 +16,8 @@ Files: add `backend/review/sync_views.py`, `backend/review/services/gitlab_sync.
 
 Verified before publishing: 565 Django tests, 344 frontend tests, 5 Docker checks; migration drift check and production frontend build passed. Activation, bounded reads, source/status mapping, dual-trigger deduplication, stale/closed MR guards, failure isolation, scheduler and settings UI are implemented. Publication and server verification follow Task 5.
 
+Additional release regression: current MR SHA wins over lagging diff refs; an unprepared diff retries before any AI call. The added regression and all 115 affected synchronization/review/merge tests passed. Final GitHub CI revalidates the full suite before deployment.
+
 - [ ] Write API tests before implementation. Authenticate a platform admin, configure one repository, mock only GitLab network reads, then assert:
 
 ```python
