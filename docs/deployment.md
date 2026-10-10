@@ -20,7 +20,7 @@ API 与 worker 必须位于同一应用主机并共享锁目录。即使使用 P
 ## 启动与管理
 
 ```bash
-docker compose up -d
+docker compose up -d --wait
 docker compose exec app python manage.py createsuperuser
 docker compose ps
 docker compose logs -f --tail=100 app
@@ -30,7 +30,7 @@ docker compose exec app supervisorctl -c /app/docker/supervisord.conf status
 本地构建：
 
 ```bash
-docker compose -f compose.yaml -f compose.build.yaml up -d --build
+docker compose -f compose.yaml -f compose.build.yaml up -d --build --wait
 ```
 
 仅停止服务用 `docker compose down`。`down -v` 会删除命名卷及全部数据，不用于常规升级。
@@ -100,7 +100,7 @@ docker compose stop app
 docker compose run --rm --no-deps --entrypoint tar app -C /data -czf - db.sqlite3 > database-backup.tar.gz
 docker compose run --rm --no-deps --entrypoint tar app -C /data -czf - secrets > keys-backup.tar.gz
 docker compose pull
-docker compose up -d
+docker compose up -d --wait
 ```
 
 二进制重定向请在 Bash 或 PowerShell 7.4+ 执行。数据库与密钥备份应存放在不同、访问受限的位置。PostgreSQL 使用其一致性备份工具；不要用上述 SQLite 命令替代。

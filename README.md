@@ -31,7 +31,7 @@
 ```bash
 git clone https://github.com/bennie-asi/cw-cr.git
 cd cw-cr
-docker compose up -d
+docker compose up -d --wait
 docker compose exec app python manage.py createsuperuser
 ```
 
@@ -43,13 +43,18 @@ docker compose exec app python manage.py createsuperuser
 
 ```bash
 docker run -d --name cw-cr --restart unless-stopped -p 127.0.0.1:8080:8080 --add-host host.docker.internal:host-gateway -v cw-cr-data:/data ghcr.io/bennie-asi/cw-cr:latest
+```
+
+运行 `docker ps --filter name=cw-cr`，等待状态显示 `(healthy)` 后创建管理员：
+
+```bash
 docker exec -it cw-cr python manage.py createsuperuser
 ```
 
 ### 从源码构建
 
 ```bash
-docker compose -f compose.yaml -f compose.build.yaml up -d --build
+docker compose -f compose.yaml -f compose.build.yaml up -d --build --wait
 docker compose exec app python manage.py createsuperuser
 ```
 
