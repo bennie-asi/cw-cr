@@ -72,7 +72,9 @@ jobs:
             SOURCE_URL=${{ github.server_url }}/${{ github.repository }}
             VERSION=${{ github.ref_name }}
             REVISION=${{ github.sha }}
-          cache-from: type=gha,scope=cw-cr-amd64
+          cache-from: |
+            type=gha,scope=cw-cr-release
+            type=gha,scope=cw-cr-amd64
           cache-to: type=gha,mode=max,scope=cw-cr-release
       - name: Image summary
         env:

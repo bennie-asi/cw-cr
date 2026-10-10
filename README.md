@@ -35,7 +35,7 @@ docker compose up -d
 docker compose exec app python manage.py createsuperuser
 ```
 
-打开 **http://localhost:8080**，使用刚创建的管理员登录。首次启动自动迁移数据库、生成独立密钥；数据保存在命名卷中。
+打开 **[http://localhost:8080](http://localhost:8080)**，使用刚创建的管理员登录。首次启动自动迁移数据库、生成独立密钥；数据保存在命名卷中。
 
 默认配置可直接启动。需要改端口、域名或连接时，将 [`.env.docker.example`](.env.docker.example) 复制为 `.env` 再编辑。GitLab、模型与企业微信也可在登录后的页面配置。
 
