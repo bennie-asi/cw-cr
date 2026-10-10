@@ -194,7 +194,9 @@ function App({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<vo
       void onLogout().then(resolve).catch(error => { dirtyForm.current = wasDirty; reject(error) })
     }, resolve)
   })
-  const historyOwner = useRef(crypto.randomUUID())
+  const historyOwner = useRef('')
+  // getRandomValues also works on HTTP deployments; randomUUID requires HTTPS.
+  if (!historyOwner.current) historyOwner.current = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('')
   const historyIndex = useRef(0)
   const currentUrl = useRef(window.location.pathname + window.location.search + window.location.hash)
   const historyRollback = useRef<(() => void) | null>(null)
