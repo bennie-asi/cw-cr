@@ -27,6 +27,7 @@ export type Project = {
   notificationInherit?: boolean
   statusReasons?: string[]
   automationEnabled?: boolean
+  syncEnabled?: boolean
   owner: string
   reviews: number
   blockers: number
@@ -43,7 +44,7 @@ export type Review = {
   mr: string
   project: string
   branch: string
-  source: 'GitLab Webhook' | '/review' | '/improve' | '手动触发'
+  source: 'GitLab Webhook' | '定时同步' | '/review' | '/improve' | '手动触发'
   status: '已完成' | '排队中' | '运行中' | '有阻断' | '失败'
   generationState?: string
   publicationState?: string

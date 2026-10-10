@@ -11,7 +11,8 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from review.integrations.gitlab import gitlab_webhook_secret
+from review.integrations.gitlab import GitLabClient, gitlab_webhook_secret
+from review.services.automatic_reviews import enqueue_automatic_review
 from review.models import AuditLog, Project, ProjectPolicy, ProjectRepository, Review, ReviewJob
 from review.services.review_runner import get_or_create_review_job, run_review_job
 from review.services.execution_locks import ResourceBusy
@@ -104,9 +105,20 @@ def gitlab_webhook(request):
         event_uuid = f'{project_path}:{enriched_payload.get("mr_iid")}:{event_marker}'
     enriched_payload = {**enriched_payload, 'event_uuid': event_uuid, 'source': source, 'repository_path': project_path}
     try:
-        job, is_new_event = get_or_create_review_job(project, enriched_payload, job_kind)
+        if source == Review.Source.WEBHOOK and not settings.REVIEW_ALLOW_TEST_FALLBACK:
+            client = GitLabClient(project, repository_path=project_path)
+            if not client.remote_enabled:
+                return Response({'detail': 'GitLab 连接未配置完整，暂时无法读取当前 MR'}, status=503)
+            current_mr = client.fetch_merge_request(enriched_payload['mr_iid'], enriched_payload)
+            job, is_new_event = enqueue_automatic_review(project, project_path, current_mr, source, enriched_payload)
+            if job is None:
+                return Response({'accepted': False, 'reason': '当前 MR 是草稿、已结束或属于激活基线'})
+        else:
+            job, is_new_event = get_or_create_review_job(project, enriched_payload, job_kind)
     except ResourceBusy:
         return Response({'accepted': False, 'reason': '此 MR 正在创建评审任务，请稍后重试'}, status=409)
+    except Exception:
+        return Response({'accepted': False, 'reason': '无法读取或处理当前 GitLab MR，请稍后重试'}, status=503)
     if is_new_event:
         AuditLog.objects.create(
             project=project,

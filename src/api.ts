@@ -17,6 +17,7 @@ export type BackendProject = {
   model?: { inherited?: boolean; configured?: boolean; model?: string }
   notification?: { inherited?: boolean; configured?: boolean }
   policy?: { webhook_trigger?: boolean }
+  sync_enabled?: boolean
   updated_at?: string
 }
 
@@ -150,6 +151,21 @@ export type ProjectConnectionCheck = {
     connection: { state: 'ready' | 'error' | 'unconfigured'; detail: string }
     webhook: { state: 'ready' | 'missing' | 'unknown'; detail: string }
   }[]
+}
+
+export type GitLabSyncStatus = {
+  enabled: boolean
+  interval_seconds: number
+  activated_at: string | null
+  next_sync_at: string | null
+  last_sync_at: string | null
+  last_success_at: string | null
+  sync_state: 'idle' | 'syncing' | 'success' | 'error'
+  last_error: string
+  last_result: { enqueued?: number; repositories?: { path: string; opened_mrs: number; enqueued: number; baselined: boolean; error: string }[] }
+  consecutive_failures: number
+  baseline_mrs: number
+  in_progress: boolean
 }
 
 export type BackendGitLabConfig = {
@@ -295,7 +311,8 @@ export function mapProject(input: BackendProject): Project {
     modelInherit: input.model_inherit !== false,
     notificationInherit: input.notification_inherit !== false,
     statusReasons: input.status_reasons || [],
-    automationEnabled: input.policy?.webhook_trigger !== false,
+    automationEnabled: input.policy?.webhook_trigger !== false || input.sync_enabled === true,
+    syncEnabled: input.sync_enabled === true,
     owner: input.owner || '未分配',
     reviews: input.reviews_count || 0,
     blockers: input.blockers || 0,
@@ -357,6 +374,9 @@ export type PromptConfig = {
 }
 
 export const api = {
+  projectSync: (id: string) => request<GitLabSyncStatus>(`/projects/${encodeURIComponent(id)}/sync/`),
+  saveProjectSync: (id: string, enabled: boolean, interval_seconds: number) => request<GitLabSyncStatus>(`/projects/${encodeURIComponent(id)}/sync/`, { method: 'PATCH', body: JSON.stringify({ enabled, interval_seconds }) }),
+  runProjectSync: (id: string) => request<GitLabSyncStatus>(`/projects/${encodeURIComponent(id)}/sync/run/`, { method: 'POST' }),
   promptConfig: () => request<PromptConfig>('/prompt-config/'),
   updatePromptConfig: (payload: Record<string, unknown>) => request<PromptConfig>('/prompt-config/', { method: 'PATCH', body: JSON.stringify(payload) }),
   listUsers: () => request<ManagedUser[]>('/users/'),

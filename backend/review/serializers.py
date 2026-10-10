@@ -17,6 +17,7 @@ from .models import (
     NotificationConfig,
     Project,
     ProjectRepository,
+    ProjectGitLabSync,
     ProjectPolicy,
     GlobalPromptConfig,
     Review,
@@ -327,13 +328,17 @@ class ProjectSerializer(PreserveBlankCredentialsMixin, serializers.ModelSerializ
     blockers = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     status_reasons = serializers.SerializerMethodField()
+    sync_enabled = serializers.SerializerMethodField()
+
+    def get_sync_enabled(self, obj):
+        return ProjectGitLabSync.objects.filter(project=obj, enabled=True).exists()
 
     class Meta:
         model = Project
         fields = (
             'id', 'name', 'gitlab_project_path', 'gitlab_project_id', 'gitlab_url', 'repositories',
             'owner', 'enabled', 'model_inherit', 'notification_inherit', 'engine_inherit', 'webhook_secret', 'status',
-            'status_reasons',
+            'status_reasons', 'sync_enabled',
             'reviews_count', 'blockers', 'policy', 'model', 'notification',
             'created_at', 'updated_at', 'current_user_role',
         )

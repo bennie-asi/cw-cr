@@ -215,6 +215,11 @@ def _run_review_job(job_id) -> Review | None:
         policy, _ = ProjectPolicy.objects.get_or_create(project=job.project)
         gitlab = GitLabClient(job.project, repository_path=payload['repository_path'])
         mr = gitlab.fetch_merge_request(payload['mr_iid'], payload)
+        expected_sha = payload.get('automatic_head_sha')
+        if expected_sha and (mr.get('state') != 'opened' or mr.get('draft', mr.get('work_in_progress', False)) is True):
+            raise StaleReviewError('MR 已结束或转为草稿，自动任务已停止')
+        if expected_sha and expected_sha != ((mr.get('diff_refs') or {}).get('head_sha') or mr.get('sha')):
+            raise StaleReviewError('自动任务的提交已变化，等待最新提交重新入队')
         if review is None:
             diff_refs = mr.get('diff_refs') or {}
             review = Review.objects.create(

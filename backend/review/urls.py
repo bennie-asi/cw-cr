@@ -39,6 +39,7 @@ from .views import (
     trigger_project_review,
 )
 from .webhooks import gitlab_webhook
+from .sync_views import project_sync, request_project_sync
 from .prompt_views import prompt_config
 from .gate_views import merge_gate, merge_gate_dry_run
 from .auth_views import session_status, sign_in, sign_out, change_password
@@ -48,6 +49,8 @@ from .user_views import users, user_detail, user_reset_password
 
 
 urlpatterns = [
+    path('projects/<uuid:project_id>/sync/', project_sync, name='project-sync'),
+    path('projects/<uuid:project_id>/sync/run/', request_project_sync, name='project-sync-run'),
     path('users/', users, name='users'),
     path('users/<int:user_id>/', user_detail, name='user-detail'),
     path('users/<int:user_id>/reset-password/', user_reset_password, name='user-reset-password'),

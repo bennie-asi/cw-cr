@@ -47,6 +47,7 @@ GLOBAL_ROUTES = {
 }
 COLLECTION_ROUTES = {'projects', 'reviews', 'overview', 'overview-coverage'}
 PROJECT_ROUTES = {
+    'project-sync', 'project-sync-run',
     'project-members', 'project-member-detail',
     'project-audit-logs',
     'project-detail', 'project-policy', 'project-engine-config', 'project-model-config', 'project-model-config-test',

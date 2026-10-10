@@ -1,0 +1,25 @@
+.project-sync-card h2 { display: flex; align-items: center; gap: 6px; }
+.sync-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; border: 0; padding: 20px 24px 8px; margin: 0; min-width: 0; }
+.sync-switch { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+.sync-switch input { accent-color: var(--primary); width: 16px; height: 16px; }
+.sync-interval { width: 165px; }
+.sync-interval input { width: 100%; }
+.sync-interval small { color: var(--muted); font-size: 11px; }
+.sync-actions { display: flex; gap: 8px; margin-left: auto; }
+.sync-button { background: var(--surface); color: var(--ink); border: 1px solid var(--border-strong); border-radius: 8px; padding: 9px 13px; font-size: 12px; font-weight: 600; }
+.sync-button.primary { background: var(--primary); border-color: var(--primary); color: white; }
+.sync-button:hover:not(:disabled) { filter: brightness(.97); }
+.sync-status { padding: 4px 9px; border-radius: 20px; font-size: 11px; color: var(--muted); background: var(--surface-soft); }
+.sync-status.success, .sync-status.syncing { background: var(--green-soft); color: var(--green); }
+.sync-status.error { background: var(--orange-soft); color: var(--orange); }
+.sync-baseline-note { margin: 12px 24px; align-items: flex-start; }
+.sync-baseline-note svg { flex-shrink: 0; margin-top: 2px; }
+.sync-times { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 24px; font-size: 12px; }
+.sync-times dt { color: var(--muted); margin-bottom: 5px; }
+.sync-times dd { margin: 0; }
+.sync-repositories { margin: 16px 24px; border-top: 1px solid var(--border); }
+.sync-repositories > div { padding: 10px 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; overflow-wrap: anywhere; }
+.sync-repositories span { color: var(--muted); }
+.project-sync-card > .form-error, .sync-message, .sync-loading { margin: 16px 24px; font-size: 12px; }
+.sync-message { color: var(--green); }
+@media (max-width: 700px) { .sync-actions { margin-left: 0; width: 100%; } .sync-times { grid-template-columns: 1fr; } }

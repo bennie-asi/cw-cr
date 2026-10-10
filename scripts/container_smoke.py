@@ -9,7 +9,7 @@ BASE = 'http://localhost:8080'
 client = build_opener(HTTPCookieProcessor(CookieJar()))
 
 
-def request(path, expected=200, data=None, csrf=None, origin=None):
+def request(path, expected=200, data=None, csrf=None, origin=None, method=None):
     headers = {'Content-Type': 'application/json'}
     if csrf:
         headers['X-CSRFToken'] = csrf
@@ -17,7 +17,7 @@ def request(path, expected=200, data=None, csrf=None, origin=None):
         headers['Origin'] = origin
     body = json.dumps(data).encode() if data is not None else None
     try:
-        response = client.open(Request(BASE + path, body, headers), timeout=15)
+        response = client.open(Request(BASE + path, body, headers, method=method), timeout=15)
     except HTTPError as error:
         response = error
     payload = response.read()
@@ -44,8 +44,12 @@ if phase == 'create':
         'repositories': [{'path': 'example-team/demo-api'}],
     }, csrf=csrf)
     assert project['name'] == 'Container smoke project'
+    sync = request(f'/api/projects/{project["id"]}/sync/', data={'enabled': False, 'interval_seconds': 120}, csrf=csrf, method='PATCH')
+    assert not sync['enabled'] and sync['interval_seconds'] == 120
 projects = request('/api/projects/')['results']
 assert len(projects) == 1 and projects[0]['name'] == 'Container smoke project'
+sync = request(f'/api/projects/{projects[0]["id"]}/sync/')
+assert not sync['enabled'] and sync['interval_seconds'] == 120
 request('/api/auth/logout/', data={}, csrf=csrf)
 request('/api/projects/', expected=401)
 print(f'PASS ({phase}): HTTP stack, SPA, API errors, session, CSRF, origin checks, project persistence, logout')

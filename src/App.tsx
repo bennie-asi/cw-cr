@@ -22,6 +22,8 @@ import { UserManagement } from './UserManagement'
 import { GlobalPrompts } from './GlobalPrompts'
 import { HelpMenu } from './HelpMenu'
 import { ProjectReviewPolicy, thresholdLabel } from './ProjectReviewPolicy'
+import { ProjectSync } from './ProjectSync'
+export { ProjectSync } from './ProjectSync'
 import { InheritanceDialog } from './InheritanceDialog'
 import { useDraftState } from './useDraftState'
 import { useConfigSave } from './useConfigSave'
@@ -1298,7 +1300,7 @@ function App({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<vo
           /></>
         )
       case 'policy':
-        return <PolicyPage key={activeProjectId || 'policy'} saveError={policySaveError} saving={Boolean(activeProjectId && pendingPolicyProjects.has(activeProjectId))} projectName={projects.find((project) => project.id === activeProjectId)?.name || projects[0]?.name || '当前项目'} policy={policy} onChange={updatePolicy} onSave={savePolicy} onNotify={notify} engineConfig={projectEngineConfigData} engineLoadStatus={projectEngineLoadStatus} onReloadEngine={() => setBackendRefreshToken(value => value + 1)} engineSaving={pendingEngineScope === 'project'} readOnly={projectConfigReadOnly} onSaveEngine={(payload) => saveEngineConfig(payload, 'project')} />
+        return <PolicyPage projectId={activeProjectId} key={activeProjectId || 'policy'} saveError={policySaveError} saving={Boolean(activeProjectId && pendingPolicyProjects.has(activeProjectId))} projectName={projects.find((project) => project.id === activeProjectId)?.name || projects[0]?.name || '当前项目'} policy={policy} onChange={updatePolicy} onSave={savePolicy} onNotify={notify} engineConfig={projectEngineConfigData} engineLoadStatus={projectEngineLoadStatus} onReloadEngine={() => setBackendRefreshToken(value => value + 1)} engineSaving={pendingEngineScope === 'project'} readOnly={projectConfigReadOnly} onSaveEngine={(payload) => saveEngineConfig(payload, 'project')} />
       case 'models':
         return <ModelsPageConnected onDirtyChange={onDirtyChange} onInvalidate={() => { setModelProbeMessage(''); setModelTested(false) }} probeMessage={modelProbeMessage} key={`${modelScope}-${activeProjectId}-${backendRefreshToken}`} initial={modelScope === 'project' ? projectModelConfigData : modelConfigData} modelOptions={modelCatalog} scope={modelScope} projectName={projects.find((project) => project.id === activeProjectId)?.name || projects[0]?.name || '当前项目'} onScopeChange={() => undefined} tested={modelTested} onTest={(payload) => testModelConnection(modelScope, payload)} onSave={(payload) => saveModelConfig(payload, modelScope)} engineConfig={globalEngineConfigData} engineLoadStatus={globalConfigStatus.engines} onReloadEngines={() => setBackendRefreshToken(value => value + 1)} engineSaving={pendingEngineScope === 'global'} onSaveEngine={(payload) => saveEngineConfig(payload, 'global')} onTestEngine={testEngineConfig} />
       case 'notifications':
@@ -1337,7 +1339,7 @@ function App({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<vo
             action={gateAction}
             error={gateError}
             projectName={projects.find((project) => project.id === activeProjectId)?.name || '当前项目'}
-            automationEnabled={policy.webhookTrigger}
+            automationEnabled={policy.webhookTrigger || projects.find(project => project.id === activeProjectId)?.syncEnabled === true}
             projectEnabled={currentProject?.enabled !== false}
             onOpenPolicy={() => navigate('policy')}
             onSelectReview={(reviewId) => { gateRequest.current += 1; setSelectedGateReviewId(reviewId || null); setGateAssessment(null); setGateDryRun(false); setGateDryRunPassed(false); setGateError('') }}
@@ -1662,7 +1664,7 @@ function SummaryPanel({ review, onNotify, onSave }: { review: BackendReview; onN
   </div>
 }
 
-function PolicyPage({ saving, saveError, projectName, policy, onChange, onSave, onNotify, engineConfig, engineLoadStatus, onReloadEngine, engineSaving, readOnly, onSaveEngine }: { saving: boolean; saveError?: string; projectName: string; policy: PolicyState; onChange: (value: PolicyState) => void; onSave: (value: PolicyState) => void; onNotify: (message: string, tone?: 'success' | 'info' | 'warning') => void; engineConfig: ProjectEngineConfig | null; engineLoadStatus: 'loading' | 'ready' | 'error'; onReloadEngine: () => void; engineSaving: boolean; readOnly: boolean; onSaveEngine: ConfigSave }) {
+function PolicyPage({ projectId, saving, saveError, projectName, policy, onChange, onSave, onNotify, engineConfig, engineLoadStatus, onReloadEngine, engineSaving, readOnly, onSaveEngine }: { projectId?: string | null; saving: boolean; saveError?: string; projectName: string; policy: PolicyState; onChange: (value: PolicyState) => void; onSave: (value: PolicyState) => void; onNotify: (message: string, tone?: 'success' | 'info' | 'warning') => void; engineConfig: ProjectEngineConfig | null; engineLoadStatus: 'loading' | 'ready' | 'error'; onReloadEngine: () => void; engineSaving: boolean; readOnly: boolean; onSaveEngine: ConfigSave }) {
   const [advanced, setAdvanced] = useState(false)
   const [promptError, setPromptError] = useState('')
   useEffect(() => { if (saveError && /提示词|summary_prompt/.test(saveError)) setAdvanced(true) }, [saveError])
@@ -1671,6 +1673,7 @@ function PolicyPage({ saving, saveError, projectName, policy, onChange, onSave, 
   const setPromptDraft = (value: string) => update('prompt', value)
   return <div className="settings-layout"><div className="settings-main">
     <ProjectReviewPolicy policy={policy} onChange={onChange} onValidityChange={setPromptError} saving={saving} readOnly={readOnly} />
+    {projectId && <ProjectSync key={projectId} projectId={projectId} readOnly={readOnly} />}
     <fieldset disabled={readOnly} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <Card title="自动触发" subtitle={`当前项目：${projectName} · 配置 GitLab 事件和命令触发方式`}>
         <div className="setting-row"><div className="setting-icon blue"><Webhook size={17} /></div><div className="setting-copy"><strong>MR 创建 / push 自动触发</strong><span>接收 GitLab merge_request webhook，自动开始完整评审。</span></div><Toggle label="MR 创建 / push 自动触发" checked={policy.webhookTrigger} onChange={(value) => update('webhookTrigger', value)} /></div>
@@ -2060,7 +2063,7 @@ export function MergeGatePage({
       </Card>
       </section>}
     </div>
-    <aside className="settings-side"><Card title="项目运行状态"><div className={cn('gate-status-card', enabled && 'enabled')}><div className="gate-status-icon">{enabled ? <CheckCircle2 size={22} /> : <Lock size={22} />}</div><strong>{enabled ? '项目自动合并已开启' : '项目自动合并已关闭'}</strong><span>{enabled ? '持续作用于后续 MR，无需逐条开启。' : '开启项目开关后持续生效。'}</span></div><p className="project-auto-merge-note">接入 GitLab Webhook 并开启自动评审后，MR 创建或 push 会自动进入评审及合并检查。</p></Card><Card title="阻断与失败处理"><div className="fallback-note"><div className="setting-icon orange"><AlertTriangle size={16} /></div><div><strong>只影响对应 MR，项目开关保持开启</strong><span>有阻断或检查失败时，此 MR 等待处理；后续 MR 继续独立检查。合并响应不确定时只核对状态，不重复提交。</span></div></div><div className="side-note"><Bell size={14} />合并结果按项目通知配置投递。</div></Card></aside>
+    <aside className="settings-side"><Card title="项目运行状态"><div className={cn('gate-status-card', enabled && 'enabled')}><div className="gate-status-icon">{enabled ? <CheckCircle2 size={22} /> : <Lock size={22} />}</div><strong>{enabled ? '项目自动合并已开启' : '项目自动合并已关闭'}</strong><span>{enabled ? '持续作用于后续 MR，无需逐条开启。' : '开启项目开关后持续生效。'}</span></div><p className="project-auto-merge-note">接入 GitLab Webhook 或启用定时同步后，新 MR 和新提交会自动进入评审及合并检查。</p></Card><Card title="阻断与失败处理"><div className="fallback-note"><div className="setting-icon orange"><AlertTriangle size={16} /></div><div><strong>只影响对应 MR，项目开关保持开启</strong><span>有阻断或检查失败时，此 MR 等待处理；后续 MR 继续独立检查。合并响应不确定时只核对状态，不重复提交。</span></div></div><div className="side-note"><Bell size={14} />合并结果按项目通知配置投递。</div></Card></aside>
   </div>
 }
 

@@ -12,7 +12,9 @@
 
 ### Task 1: Configuration and activation baseline
 
-Files: add `backend/review/sync_views.py`, `backend/review/services/gitlab_sync.py`, `backend/review/tests/test_gitlab_sync.py`; modify `backend/review/models.py`, `backend/review/urls.py`, `backend/review/permissions.py`; generate `backend/review/migrations/0021_projectgitlabsync_gitlabsyncbaseline.py` (use next free migration number).
+Files: add `backend/review/sync_views.py`, `backend/review/services/gitlab_sync.py`, `backend/review/tests/test_gitlab_sync.py`; modify `backend/review/models.py`, `backend/review/urls.py`, `backend/review/permissions.py`; generate `backend/review/migrations/0028_gitlab_periodic_sync.py` and `0029_review_sync_source.py`.
+
+Verified before publishing: 565 Django tests, 344 frontend tests, 5 Docker checks; migration drift check and production frontend build passed. Activation, bounded reads, source/status mapping, dual-trigger deduplication, stale/closed MR guards, failure isolation, scheduler and settings UI are implemented. Publication and server verification follow Task 5.
 
 - [ ] Write API tests before implementation. Authenticate a platform admin, configure one repository, mock only GitLab network reads, then assert:
 

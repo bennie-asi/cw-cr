@@ -24,7 +24,7 @@
 
 ## 🚀 快速部署
 
-需要 Docker Engine / Docker Desktop 和 Docker Compose。镜像内已包含前端、API 与评审 worker，支持 Linux amd64 / arm64。
+需要 Docker Engine / Docker Desktop 和 Docker Compose。镜像内已包含前端、API、评审 worker 与 GitLab 同步器，支持 Linux amd64 / arm64。
 
 ### Docker Compose
 
@@ -64,7 +64,7 @@ docker compose exec app python manage.py createsuperuser
 
 | 能力 | 你可以做什么 |
 | --- | --- |
-| GitLab MR 评审 | 接收 Merge Request Webhook，在页面触发 review / improve，持续队列处理与失败重试 |
+| GitLab MR 评审 | Webhook 实时触发 + 可配置定时拉取，同一提交自动去重；也可手动 review / improve |
 | 有证据的行级反馈 | 核对实际 diff、提交 SHA、新旧行号和原代码，再发布 Discussions 与原生 suggestion |
 | 中文总评 | 查看、编辑并同步 MR 总评，保留评审与发布阶段记录 |
 | 模型与引擎 | 配置 OpenAI / Anthropic 兼容服务、CCSwitch 网关，平台默认与项目覆盖独立管理 |
@@ -81,10 +81,12 @@ docker compose exec app python manage.py createsuperuser
 1. **系统设置**：配置 GitLab 地址、API Token 和 Webhook Secret，测试连接。
 2. **模型与引擎**：配置兼容 API 的 Base URL、Key 和模型，测试后保存。
 3. **项目管理**：添加真实仓库，完成连接检查，授权项目成员。
-4. **GitLab**：添加 Merge request events Webhook，目标为 `https://你的域名/api/webhooks/gitlab/`，填写匹配的 Secret。
+4. **自动触发**：在项目评审策略中开启定时同步（默认 60 秒）；也可在 GitLab 添加 Merge request events Webhook，目标为 `https://你的域名/api/webhooks/gitlab/`，填写匹配的 Secret。
 5. **通知配置**：按需添加企业微信机器人，发送测试消息。
 
 Webhook 地址必须能从 GitLab 服务器访问。容器里的 `127.0.0.1` 指向容器本身；连接主机上的模型网关可使用 `host.docker.internal`，并确保网关允许来自容器的访问。
+
+GitLab 无法访问回调地址时，可使用主动同步：只需智审台能够访问 GitLab API。开启同步会先记录现有 MR 的提交基线，只自动评审之后的新 MR 和新提交；再次开启会更新基线。两种触发可以同时运行，同一提交不会重复自动调用 AI。项目页面提供同步间隔、最近结果、失败状态和“立即同步”。
 
 页面保存的配置优先于环境变量。保存时将已有秘密字段留空，可保留原值。详细的继承规则、Token 用途、引擎安装与常见问题见 [接入指南](docs/integrations.md)。
 

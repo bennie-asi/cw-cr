@@ -4,7 +4,13 @@
 
 登录后在系统设置中保存 GitLab 地址、API Token、Webhook Secret，测试连接；在项目管理中添加 `group/project` 仓库，完成只读连接检查并授权成员。连接检查不会自行安装 Webhook。
 
-在 GitLab 项目中设置 **Merge request events**，目标为 `https://review.example.com/api/webhooks/gitlab/`，Secret 与平台配置一致。地址必须能从 GitLab 访问。当前支持 MR 创建、更新及相关 push 事件入队；平台中的 review / improve 操作也会创建同一队列任务。
+在 GitLab 项目中设置 **Merge request events**，目标为 `https://review.example.com/api/webhooks/gitlab/`，Secret 与平台配置一致。地址必须能从 GitLab 访问。MR 创建和新提交产生的 MR 更新事件可以入队；独立的 push Webhook 不处理。需要通过评论触发时，同时开启 **Comments / Note events**，支持 `/review`、`/improve`。
+
+在项目评审策略中可以独立开启 **GitLab 定时同步**，默认每 60 秒主动分页拉取所有已启用仓库的开放 MR，可调整为 30–3600 秒。Webhook 与同步共用自动入队机制，同一仓库、MR 和提交不会重复创建自动评审；手动评审和评论命令仍可明确重新评审。
+
+每次开启同步会先完整读取当前 MR 并记录提交基线，草稿也计入基线。现有提交不会自动评审或合并；之后的新 MR 和新提交会进入评审，新仓库第一次纳入同步也先记录基线。读取失败、缺少 SHA 或分页不完整时不会开启同步。已经成功完成的完整评审覆盖同一提交；失败重试耗尽后需要手动重试或等待新提交。
+
+同步只需要智审台能访问 GitLab API，不依赖 GitLab 的出站回调白名单。Webhooks 可作为实时触发，同步可作为漏通知恢复；后台同步器独立于 AI worker 运行。失败按指数退避，最长 15 分钟，页面显示最近/下次同步、仓库结果与安全错误。管理员可点“立即同步”请求后台执行，项目成员可以只读查看。
 
 API Token 使用部署者选择的专用 GitLab 服务账号，按其需要授予读仓库、发布评论及可选合并权限。是否能合并还受 GitLab 保护分支、审批和 CI 约束。
 

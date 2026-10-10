@@ -142,6 +142,30 @@ class ProjectPolicy(TimeStampedModel):
         return [*levels, LineComment.Level.UNRATED]
 
 
+class ProjectGitLabSync(TimeStampedModel):
+    project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name='gitlab_sync')
+    enabled = models.BooleanField(default=False)
+    interval_seconds = models.PositiveIntegerField(default=60, validators=[MinValueValidator(30), MaxValueValidator(3600)])
+    activated_at = models.DateTimeField(null=True, blank=True)
+    next_sync_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    last_sync_at = models.DateTimeField(null=True, blank=True)
+    last_success_at = models.DateTimeField(null=True, blank=True)
+    sync_started_at = models.DateTimeField(null=True, blank=True)
+    sync_state = models.CharField(max_length=20, default='idle')
+    consecutive_failures = models.PositiveIntegerField(default=0)
+    last_error = models.TextField(blank=True, default='')
+    last_result = models.JSONField(default=dict, blank=True)
+
+
+class GitLabSyncBaseline(TimeStampedModel):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='sync_baselines')
+    repository_path = models.CharField(max_length=255)
+    initial_shas = models.JSONField(default=dict)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=('project', 'repository_path'), name='unique_gitlab_sync_baseline')]
+
+
 class ModelConfig(TimeStampedModel):
     class Scope(models.TextChoices):
         GLOBAL = 'global', '全局'
@@ -217,6 +241,7 @@ class NotificationConfig(TimeStampedModel):
 class Review(TimeStampedModel):
     class Source(models.TextChoices):
         WEBHOOK = 'GitLab Webhook', 'GitLab Webhook'
+        SYNC = '定时同步', '定时同步'
         REVIEW = '/review', '/review'
         IMPROVE = '/improve', '/improve'
         MANUAL = '手动触发', '手动触发'

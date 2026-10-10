@@ -20,6 +20,9 @@ function setup(showApp = true) {
   vi.spyOn(api, 'listReviews').mockResolvedValue([])
   for (const name of ['overview', 'systemStatus', 'modelConfig', 'gitlabConfig', 'notificationConfig', 'projectModelConfig', 'projectNotificationConfig', 'mergeGate'] as const) vi.spyOn(api, name).mockResolvedValue({})
   vi.spyOn(api, 'getPolicy').mockResolvedValue(base)
+  vi.spyOn(api, 'projectSync').mockResolvedValue({ enabled: false, interval_seconds: 60,
+    activated_at: null, next_sync_at: null, last_sync_at: null, last_success_at: null,
+    sync_state: 'idle', last_error: '', last_result: {}, consecutive_failures: 0, baseline_mrs: 0, in_progress: false })
   const save = vi.spyOn(api, 'updatePolicy').mockImplementation(async (_id, payload) => ({ ...base, ...payload }))
   if (showApp) render(<App />)
   return { user: userEvent.setup(), save }
