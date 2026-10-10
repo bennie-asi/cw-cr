@@ -1,0 +1,23 @@
+.account-modal-backdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: #19203657; }
+.account-dialog { width: min(440px, 100%); max-height: calc(100dvh - 40px); overflow-y: auto; padding: 28px; border: 1px solid var(--border); border-radius: 12px; background: #fff; box-shadow: 0 12px 40px #18224824; }
+.account-dialog h2 { margin: 0 0 10px; font-size: 20px; }
+.account-dialog > p, .account-dialog small { color: var(--muted); line-height: 1.6; }
+.account-dialog form { display: grid; gap: 16px; margin-top: 22px; }
+.account-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.account-feedback { position: fixed; right: 24px; bottom: 24px; z-index: 201; max-width: calc(100vw - 48px); padding: 14px; border: 1px solid var(--border); border-radius: 8px; background: white; box-shadow: 0 8px 25px #17284b22; display: flex; align-items: center; gap: 12px; }
+.account-feedback button { border: 0; background: transparent; cursor: pointer; }
+.account-error { color: #b42318; }
+.action-menu-panel button:disabled { opacity: .5; cursor: wait; }
+.top-user, .sidebar-user { color: var(--ink); border-radius: 8px; font-weight: 650; }
+.top-user:hover, .sidebar-user:hover, .top-user[data-state="open"], .sidebar-user[data-state="open"] { background: var(--primary-soft); color: var(--primary); }
+.top-user span, .sidebar-user span { color: inherit; font-size: 11px; }
+.account-trigger-icon { display: none; }
+@media (max-width: 560px) {
+  .top-user .account-trigger-icon { display: block; }
+  .top-user .account-name, .top-user .account-chevron { display: none; }
+  .topbar-actions > .action-menu-trigger[aria-label="帮助"] { display: none; }
+  .topbar-actions { gap: 8px; }
+}
+.readonly-project-config { min-width: 0; margin: 16px 0 0; padding: 0; border: 0; }
+.notification-form-boundary { min-width: 0; margin: 0; padding: 0; border: 0; }
+.readonly-project-config button:disabled, .readonly-project-config input:disabled, .readonly-project-config select:disabled, .readonly-project-config textarea:disabled { cursor: not-allowed; }

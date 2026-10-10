@@ -1,0 +1,26 @@
+.help-menu-trigger { display:inline-flex; flex-shrink:0; align-items:center; justify-content:center; gap:7px; border:1px solid #e1e7f0; border-radius:8px; padding:8px 11px; color:#576780; background:white; cursor:pointer; font:inherit; font-size:13px; line-height:20px; }
+.help-menu-trigger:hover, .help-menu-trigger[data-state="open"] { color:var(--primary); background:var(--primary-soft); border-color:#dce3ff; }
+.help-menu-trigger:focus-visible, .help-menu-item:focus-visible, .help-guide-close:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+.help-menu-panel { z-index:100; width:320px; max-width:calc(100vw - 24px); max-height:var(--radix-popover-content-available-height); overflow:auto; padding:20px; border:1px solid #e1e7f0; border-radius:12px; background:white; color:#344664; box-shadow:0 12px 34px #23375120; }
+.help-menu-panel h2 { font-size:15px; font-weight:600; line-height:1.5; margin:0 0 5px; }
+.help-menu-intro { color:#7c899e; font-size:12px; line-height:1.8; margin:0 0 10px; }
+.help-menu-item { display:flex; width:100%; align-items:center; gap:11px; border:0; border-bottom:1px solid #eef1f5; border-radius:5px; background:white; color:inherit; font:inherit; cursor:pointer; padding:13px 6px; text-align:left; }
+.help-menu-item:hover { background:#f5f7fc; }
+.help-menu-item > svg { flex-shrink:0; color:#7587a3; }
+.help-menu-item > span { flex:1; min-width:0; }
+.help-menu-item strong { display:block; font-size:13px; font-weight:600; line-height:1.6; }
+.help-menu-item small { display:block; margin-top:4px; font-size:12px; line-height:1.6; color:#8a96aa; }
+.help-menu-tip { padding:11px; margin:15px 0 0; border-radius:8px; background:#f6f8fc; font-size:12px; line-height:1.8; color:#7b899f; overflow-wrap:anywhere; }
+.help-guide-overlay { position:fixed; inset:0; z-index:110; background:#17274955; }
+.help-guide-dialog { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:111; width:min(600px,calc(100vw - 32px)); max-height:calc(100dvh - 40px); overflow:auto; border:1px solid #e0e5f0; border-radius:14px; padding:28px; background:white; box-shadow:0 18px 70px #13244230; color:#3c4f6a; }
+.help-guide-dialog h2 { margin:0 32px 8px 0; font-size:20px; }
+.help-guide-dialog > p { margin:0; color:#7b899f; font-size:13px; line-height:1.8; }
+.help-guide-close { display:grid; place-items:center; position:absolute; right:20px; top:22px; padding:5px; border:0; border-radius:6px; background:transparent; cursor:pointer; color:#7d8ba1; }
+.help-guide-steps { padding-left:22px; margin:22px 0; }
+.help-guide-steps li { padding-left:6px; margin:15px 0; }
+.help-guide-steps strong { font-size:14px; }
+.help-guide-steps p, .help-guide-rules p { font-size:13px; color:#71829b; line-height:1.8; margin:6px 0; }
+.help-guide-rules { margin:20px 0; }
+.help-guide-rules p { margin:12px 0; }
+.help-guide-dialog > .button { display:flex; margin-left:auto; }
+@media(max-width:560px) { .help-menu-trigger { padding:6px 8px; } .help-guide-dialog { padding:22px; } }

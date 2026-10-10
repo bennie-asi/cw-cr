@@ -1,0 +1,195 @@
+import { act, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, expect, it, vi } from 'vitest'
+import App from './test-app'
+import { api } from './api'
+import { PROJECTS } from './test-fixtures'
+
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs() })
+
+it('shows an inaccessible project without misreporting a healthy backend as disconnected', async () => {
+  setup()
+  vi.mocked(api.listReviews).mockImplementation(projectId => projectId === 'inaccessible-project'
+    ? Promise.reject(new Error('forbidden')) : Promise.resolve([]))
+  window.history.replaceState({}, '', '/projects/inaccessible-project/merge-requests')
+  render(<App />)
+  expect(await screen.findByText('页面不存在或项目不可访问')).toBeInTheDocument()
+  expect(screen.getByText('Django 后端已连接')).toBeInTheDocument()
+  expect(api.listReviews).not.toHaveBeenCalledWith('inaccessible-project')
+  await userEvent.click(screen.getByRole('button', { name: '返回项目列表' }))
+  expect(await screen.findByRole('heading', { name: '项目管理', level: 1 })).toBeInTheDocument()
+})
+
+it.each(['models', 'notifications'])('waits for actual %s restore failure before allowing retry', async page => {
+  const modelSave = setup()
+  vi.spyOn(api, 'projectModelConfig').mockResolvedValue({ inherited: false, model: 'private' })
+  vi.mocked(api.projectNotificationConfig).mockResolvedValue({ inherited: false })
+  let reject!: (reason: Error) => void
+  const save = page === 'models' ? modelSave : vi.spyOn(api, 'updateProjectNotificationConfig')
+  save.mockImplementation(() => new Promise((_resolve, fail) => { reject = fail }))
+  window.history.replaceState({}, '', `/projects/${PROJECTS[0].id}/settings/${page}`)
+  const user = userEvent.setup()
+  render(<App />)
+  await user.click(await screen.findByRole('button', { name: '恢复全局继承' }))
+  await user.click(screen.getByRole('button', { name: '确认恢复继承' }))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: '正在恢复…' })).toBeDisabled()
+  await act(async () => reject(new Error('offline')))
+  expect(screen.getByRole('alert')).toHaveTextContent('恢复继承失败')
+  expect(save).toHaveBeenCalledWith(PROJECTS[0].id, { inherited: true })
+})
+
+it.each(['success', 'failure'])('ignores late notification test %s after switching project and returning', async result => {
+  setup()
+  vi.spyOn(api, 'projectModelConfig').mockResolvedValue({})
+  vi.mocked(api.projectNotificationConfig).mockImplementation(id => Promise.resolve({ inherited: false, name: id }))
+  let resolve!: (value: Record<string, unknown>) => void
+  let reject!: (reason: Error) => void
+  const send = vi.spyOn(api, 'testProjectNotificationConfig').mockImplementation(() => new Promise((yes, no) => { resolve = yes; reject = no }))
+  const user = userEvent.setup()
+  window.history.replaceState({}, '', `/projects/${PROJECTS[0].id}/settings/notifications`)
+  render(<App />)
+  await screen.findByRole('button', { name: '发送测试消息' })
+  await user.click(screen.getByRole('button', { name: '发送测试消息' }))
+  expect(send).toHaveBeenCalledTimes(1)
+  await user.click(screen.getByLabelText('切换项目'))
+  await user.click(screen.getByRole('button', { name: PROJECTS[1].name }))
+  await screen.findByRole('heading', { name: `${PROJECTS[1].name} · 企业微信覆盖` })
+  await user.click(screen.getByLabelText('切换项目'))
+  await user.click(screen.getByRole('button', { name: PROJECTS[0].name }))
+  await screen.findByRole('heading', { name: `${PROJECTS[0].name} · 企业微信覆盖` })
+  vi.mocked(api.systemStatus).mockClear()
+  await act(async () => { if (result === 'success') resolve({ ok: true }); else reject(new Error('old-project-private-error')) })
+  expect(screen.getByText('尚未发送测试消息')).toBeInTheDocument()
+  expect(screen.queryByText('企业微信测试消息已送达')).not.toBeInTheDocument()
+  expect(screen.queryByText('old-project-private-error')).not.toBeInTheDocument()
+  expect(api.systemStatus).not.toHaveBeenCalled()
+})
+
+it('prevents duplicate notification sends while pending and clears verification when editing target', async () => {
+  setup()
+  vi.spyOn(api, 'projectModelConfig').mockResolvedValue({})
+  vi.mocked(api.projectNotificationConfig).mockResolvedValue({ inherited: false })
+  let finish!: (value: Record<string, unknown>) => void
+  const send = vi.spyOn(api, 'testProjectNotificationConfig').mockImplementation(() => new Promise(resolve => { finish = resolve }))
+  const user = userEvent.setup()
+  window.history.replaceState({}, '', `/projects/${PROJECTS[0].id}/settings/notifications`)
+  render(<App />)
+  await user.click(await screen.findByRole('button', { name: '发送测试消息' }))
+  expect(screen.getByRole('button', { name: '正在发送…' })).toBeDisabled()
+  await user.click(screen.getByRole('button', { name: '正在发送…' }))
+  expect(send).toHaveBeenCalledTimes(1)
+  await act(async () => finish({ ok: true }))
+  expect(screen.getByText('机器人连接正常 · 最近发送成功')).toBeInTheDocument()
+  await user.type(screen.getByLabelText('Webhook 地址', { exact: false }), 'new-target')
+  expect(screen.getByText('尚未发送测试消息')).toBeInTheDocument()
+})
+
+function setup() {
+  vi.stubEnv('MODE', 'development')
+  vi.spyOn(api, 'health').mockResolvedValue({status: 'ok'})
+  vi.spyOn(api, 'listProjects').mockResolvedValue(PROJECTS.slice(0, 2))
+  vi.spyOn(api, 'listReviews').mockResolvedValue([])
+  vi.spyOn(api, 'projectAuditLogs').mockResolvedValue([])
+  for (const key of ['overview', 'systemStatus', 'modelConfig', 'gitlabConfig', 'notificationConfig', 'getPolicy', 'projectModelConfig', 'projectNotificationConfig', 'mergeGate'] as const) vi.spyOn(api, key).mockResolvedValue({})
+  const update = vi.spyOn(api, 'updateProjectModelConfig').mockResolvedValue({})
+  return update
+}
+
+it('does not prompt when leaving global notifications after visiting a project notification page', async () => {
+  setup()
+  vi.mocked(api.notificationConfig).mockResolvedValue({ name: 'test-group', language: '中文', enabled: true, notify_suggestions: true, notify_blockers: true, notify_merge_result: true })
+  vi.mocked(api.projectNotificationConfig).mockResolvedValue({ inherited: true })
+  window.history.replaceState({}, '', '/platform/settings/system')
+  const user = userEvent.setup()
+  render(<App />)
+  await screen.findByText('Django 后端已连接')
+  await user.click(screen.getByLabelText('切换项目'))
+  await user.click(screen.getByRole('button', { name: PROJECTS[0].name }))
+  await user.click(screen.getByRole('button', { name: '通知配置' }))
+  await screen.findByRole('heading', { name: `${PROJECTS[0].name} · 企业微信覆盖` })
+  await user.click(screen.getByRole('button', { name: '返回平台' }))
+  await user.click(screen.getByRole('button', { name: '通知配置' }))
+  await screen.findByRole('heading', { name: '通知配置', level: 1 })
+  await user.click(screen.getByRole('button', { name: '系统设置' }))
+  expect(await screen.findByRole('heading', { name: '系统设置', level: 1 })).toBeInTheDocument()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+it('does not expose the previous project form while the new project configuration is loading', async () => {
+  const update = setup()
+  let finish!: (value: Record<string, unknown>) => void
+  vi.spyOn(api, 'projectModelConfig').mockImplementation(id => id === PROJECTS[0].id
+    ? Promise.resolve({model: 'model-a', inherited: false})
+    : new Promise(resolve => { finish = resolve }))
+  const user = userEvent.setup()
+  render(<App />)
+  await screen.findByText('Django 后端已连接')
+  await user.click(screen.getByRole('button', {name:'模型与引擎'}))
+  await user.click(screen.getByLabelText('切换项目')); await user.click(screen.getByRole('button', {name:'demo-api'}))
+  await waitFor(() => expect(screen.getByLabelText('模型 ID')).toHaveValue('model-a'))
+  await user.click(screen.getByLabelText('切换项目'))
+  await user.click(screen.getByRole('button', {name:PROJECTS[1].name}))
+  expect(screen.queryByRole('button', {name:'保存项目模型配置'})).not.toBeInTheDocument()
+  expect(screen.queryByDisplayValue('model-a')).not.toBeInTheDocument()
+  expect(update).not.toHaveBeenCalled()
+  await act(async () => finish({model:'model-b', inherited:false}))
+  await waitFor(() => expect(screen.getByLabelText('模型 ID')).toHaveValue('model-b'))
+})
+
+it('does not replace current project form with a late save response from another project', async () => {
+  const update = setup()
+  let finishSave!: (value: Record<string, unknown>) => void
+  update.mockImplementation(() => new Promise(resolve => { finishSave = resolve }))
+  vi.spyOn(api, 'projectModelConfig').mockImplementation(id => Promise.resolve({model:id === PROJECTS[0].id ? 'model-a' : 'model-b', inherited:false}))
+  const user = userEvent.setup()
+  render(<App />)
+  await screen.findByText('Django 后端已连接')
+  await user.click(screen.getByRole('button', {name:'模型与引擎'}))
+  await user.click(screen.getByLabelText('切换项目')); await user.click(screen.getByRole('button', {name:'demo-api'}))
+  await waitFor(() => expect(screen.getByLabelText('模型 ID')).toHaveValue('model-a'))
+  await user.click(screen.getByRole('button', {name:'保存项目模型配置'}))
+  await user.click(screen.getByLabelText('切换项目'))
+  await user.click(screen.getByRole('button', {name:PROJECTS[1].name}))
+  await waitFor(() => expect(screen.getByLabelText('模型 ID')).toHaveValue('model-b'))
+  await act(async () => finishSave({model:'saved-model-a', inherited:false}))
+  expect(screen.getByLabelText('模型 ID')).toHaveValue('model-b')
+})
+
+it('ignores a model catalog returned for a project that is no longer selected', async () => {
+  setup()
+  let finish!: (value: Record<string, unknown>) => void
+  vi.spyOn(api, 'testProjectModelConfig').mockImplementation(() => new Promise(resolve => { finish = resolve }))
+  vi.spyOn(api, 'projectModelConfig').mockImplementation(id => Promise.resolve({model:id === PROJECTS[0].id ? 'model-a' : 'model-b', inherited:false}))
+  const user = userEvent.setup()
+  render(<App />)
+  await screen.findByText('Django 后端已连接')
+  await user.click(screen.getByRole('button', {name:'模型与引擎'}))
+  await user.click(screen.getByLabelText('切换项目')); await user.click(screen.getByRole('button', {name:'demo-api'}))
+  await waitFor(() => expect(screen.getByLabelText('模型 ID')).toHaveValue('model-a'))
+  await user.click(screen.getByRole('button', {name:'测试连接'}))
+  await user.click(screen.getByLabelText('切换项目'))
+  await user.click(screen.getByRole('button', {name:PROJECTS[1].name}))
+  await waitFor(() => expect(screen.getByLabelText('模型 ID')).toHaveValue('model-b'))
+  await act(async () => finish({ok:true, model_ids:['project-a-private-model']}))
+  expect(screen.queryByRole('option', {name:'project-a-private-model'})).not.toBeInTheDocument()
+  expect(screen.getByRole('button', {name:'测试连接'})).toBeInTheDocument()
+})
+
+it.each(['通知配置', '项目策略', '自动合并门禁'])('keeps %s unavailable after current project configuration fails to load', async (page) => {
+  setup()
+  vi.spyOn(api, 'projectModelConfig').mockResolvedValue({model:'model-a'})
+  vi.mocked(api.getPolicy).mockImplementation(id => id === PROJECTS[0].id ? Promise.resolve({}) : Promise.reject(new Error('offline')))
+  const user = userEvent.setup()
+  render(<App />)
+  await screen.findByText('Django 后端已连接')
+  await user.click(screen.getByLabelText('切换项目'))
+  await user.click(screen.getByRole('button', {name:'demo-api'}))
+  await user.click(screen.getByRole('button', {name:page}))
+  await user.click(screen.getByLabelText('切换项目'))
+  await user.click(screen.getByRole('button', {name:PROJECTS[1].name}))
+  expect(await screen.findByText('项目配置加载失败，请刷新重试')).toBeInTheDocument()
+  expect(screen.queryByRole('button', {name:'保存项目企微配置'})).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', {name:'保存项目策略'})).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', {name:'启用自动合并'})).not.toBeInTheDocument()
+})

@@ -1,0 +1,7 @@
+services:
+  app:
+    image: cw-cr:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile

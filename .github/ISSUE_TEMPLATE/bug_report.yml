@@ -1,0 +1,20 @@
+name: 缺陷报告
+description: 提供可复现的问题与运行环境
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: 预期行为与实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境与脱敏日志
+      description: 镜像标签/提交、部署方式、浏览器；请删除凭据和敏感仓库信息。

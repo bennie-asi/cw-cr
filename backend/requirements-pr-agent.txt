@@ -1,0 +1,2 @@
+# Keep PR-Agent isolated from the Django application's dependency set.
+pr-agent==0.46.0

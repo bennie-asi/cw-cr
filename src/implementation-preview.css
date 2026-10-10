@@ -1,0 +1,14 @@
+body.implementation-preview::after {
+  content: "交互预览 · 模拟数据";
+  position: fixed;
+  right: 14px;
+  bottom: 12px;
+  z-index: 100;
+  padding: 6px 9px;
+  border: 1px solid #cbd6ed;
+  border-radius: 6px;
+  color: #3f5686;
+  background: #f8faff;
+  font: 11px/1.2 "Microsoft YaHei", sans-serif;
+  pointer-events: none;
+}

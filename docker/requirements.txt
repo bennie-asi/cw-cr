@@ -1,0 +1,2 @@
+gunicorn>=23,<24
+supervisor>=4.2,<5

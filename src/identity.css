@@ -1,0 +1,47 @@
+.identity-page { color: #0f172a; display: grid; gap: 20px; }
+.system-tabs { display: flex; gap: 28px; border-bottom: 1px solid #e2e8f0; margin-bottom: 24px; }
+.system-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 12px 0; color: #64748b; font: inherit; cursor: pointer; }
+.system-tabs button[aria-current="page"] { color: #3157d5; border-bottom-color: #3157d5; font-weight: 600; }
+.identity-heading, .identity-toolbar, .identity-dialog header, .identity-dialog footer { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+.identity-heading h2 { font-size: 20px; margin: 0 0 8px; }
+.identity-page p, .identity-dialog p { color: #64748b; font-size: 13px; line-height: 1.7; margin: 6px 0; }
+.identity-scope { display: inline-block; color: #3157d5; background: #eef2ff; border: 1px solid #dbe4ff; border-radius: 5px; font-size: 12px; padding: 4px 8px; vertical-align: middle; }
+.identity-card, .identity-rules { background: white; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+.identity-rules { display: grid; grid-template-columns: 22px repeat(3, 1fr); gap: 20px; padding: 20px; font-size: 13px; }
+.identity-rules > svg { color: #3157d5; }
+.identity-toolbar { justify-content: flex-start; padding: 16px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
+.identity-toolbar input, .identity-toolbar select, .identity-dialog input, .identity-dialog select { color: #0f172a; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 9px 12px; font: inherit; min-width: 0; }
+.identity-toolbar input { width: min(300px, 100%); }
+.identity-toolbar > span { margin-left: auto; color: #64748b; font-size: 12px; }
+.identity-subtext { display: block; margin-top: 5px; color: #64748b; }
+.identity-badge { border-radius: 4px; padding: 4px 8px; background: #f1f5f9; font-size: 12px; }
+.identity-badge.admin { color: #3157d5; background: #eef2ff; }
+.identity-actions { display: flex; gap: 14px; }
+.identity-actions button, .identity-dialog header button { border: 0; background: none; color: #3157d5; cursor: pointer; padding: 5px; }
+.identity-actions button:hover { text-decoration: underline; }
+.identity-danger, .identity-actions .identity-danger { color: #b91c1c; }
+.identity-empty { text-align: center; padding: 36px !important; color: #64748b; }
+.identity-backdrop { position: fixed; inset: 0; z-index: 150; display: grid; place-items: center; background: #0f172a66; padding: 24px; }
+.identity-dialog { width: min(500px, 100%); max-height: calc(100vh - 48px); overflow: auto; border-radius: 12px; border: 1px solid #e2e8f0; background: white; padding: 24px; box-shadow: 0 18px 70px #0f172a30; }
+.identity-dialog h2 { font-size: 18px; margin: 0; }
+.identity-drawer-backdrop { place-items: stretch end; padding: 0; }
+.identity-dialog.identity-drawer { width: min(460px, 100vw); height: 100%; max-height: 100vh; border-radius: 0; }
+.identity-member-overlay { display: block; }
+.identity-dialog.identity-member-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 151; display: flex; flex-direction: column; gap: 14px; width: min(480px, 100vw); height: 100dvh; max-height: 100dvh; border-right: 0; }
+.identity-member-drawer header { flex-shrink: 0; }
+.identity-dialog.identity-member-drawer form { flex: 1; display: flex; flex-direction: column; margin-top: 0; }
+.identity-member-drawer form footer { margin-top: auto; }
+.identity-member-modes { display: flex; gap: 4px; border: 1px solid #e2e8f0; border-radius: 7px; padding: 4px; background: #f8fafc; }
+.identity-member-modes button { flex: 1; border: 0; border-radius: 5px; padding: 9px 8px; background: transparent; color: #64748b; font: inherit; font-size: 13px; cursor: pointer; }
+.identity-member-modes button[aria-pressed="true"] { background: white; color: #3157d5; box-shadow: 0 1px 4px #0f172a15; font-weight: 600; }
+.identity-member-modes button:disabled { cursor: default; }
+.identity-created-account { border: 1px solid #bbdfd0; border-radius: 8px; padding: 14px; background: #f0fdf8; font-size: 13px; line-height: 1.7; }
+.identity-created-account strong { color: #0b6e4f; }
+.identity-member-actions .action-menu-trigger { color: #3157d5; font-size: 13px; }
+.action-menu-panel .identity-danger, .identity-dialog p.identity-danger { color: #b91c1c; }
+.identity-dialog .button-primary.identity-remove-confirm { background: #b91c1c; }
+.identity-dialog form { display: grid; gap: 18px; margin-top: 16px; }
+.identity-dialog footer { justify-content: flex-end; border-top: 1px solid #e2e8f0; padding-top: 18px; }
+.identity-page .button-primary, .identity-dialog .button-primary { background: #3157d5; }
+.identity-page :focus-visible, .identity-dialog :focus-visible { outline: 2px solid #3157d5; outline-offset: 2px; }
+@media (max-width: 800px) { .identity-heading { align-items: flex-start; flex-direction: column; } .identity-rules { grid-template-columns: 1fr; } }
